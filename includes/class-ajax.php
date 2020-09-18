@@ -75,7 +75,8 @@ class WPCFM_Ajax
     function push_settings() {
         if ( current_user_can( 'manage_options' ) ) {
             $bundle_name = stripslashes( $_POST['data']['bundle_name'] );
-            WPCFM()->readwrite->push_bundle( $bundle_name );
+            $bundle_global = stripslashes( $_POST['data']['bundle_global'] );
+            WPCFM()->readwrite->push_bundle( $bundle_name, $bundle_global );
             echo __( 'Push successful', 'wpcfm' );
         }
         exit;

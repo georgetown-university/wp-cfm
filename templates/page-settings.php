@@ -102,9 +102,9 @@ $configuration = $this->helper->group_items( $configuration );
                 <a href="#" class="hide-registered">Hide registered</a>
                 <a href="#" class="show-all hidden">Show all</a>
 
-                <?php if ( is_multisite() ) { ?>
-                    <label class="bundle-network-label">
-                        <input type="checkbox" class="bundle-network">
+                <?php if ( is_multisite() && ! is_network_admin() ) { ?>
+                    <label class="bundle-global-label">
+                        <input type="checkbox" class="bundle-global">
                         Bundle applies to entire network?
                     </label>
                 <?php } ?>

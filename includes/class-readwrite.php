@@ -88,7 +88,7 @@ class WPCFM_Readwrite
      * Move the DB bundle to file
      * @param string $bundle_name The bundle name (or "all")
      */
-    function push_bundle( $bundle_name ) {
+    function push_bundle( $bundle_name, $bundle_global = false ) {
         $bundles = ( 'all' == $bundle_name ) ? WPCFM()->helper->get_bundle_names() : array( $bundle_name );
 
         foreach ( $bundles as $bundle_name ) {
@@ -107,7 +107,7 @@ class WPCFM_Readwrite
             elseif (in_array(WPCFM_CONFIG_FORMAT, array('yaml', 'yml'))) {
                 $data = WPCFM_Helper::convert_to_yaml($data);
             }
-            $this->write_file( $bundle_name, $data );
+            $this->write_file( $bundle_name, $bundle_global, $data );
         }
     }
 
@@ -167,12 +167,15 @@ class WPCFM_Readwrite
      * Returns the bundle filename.
      * @return string
      */
-    function bundle_filename( $bundle_name ) {
+    function bundle_filename( $bundle_name, $bundle_global = false ) {
         $filename = "$this->folder/$bundle_name." . WPCFM_CONFIG_FORMAT;
 
         if ( is_multisite() ) {
             if ( WPCFM()->options->is_network ) {
                 $filename = "$this->folder/network-$bundle_name." . WPCFM_CONFIG_FORMAT;
+            }
+            elseif ( $bundle_global ) {
+                $filename = "$this->folder/global-blog-$bundle_name." . WPCFM_CONFIG_FORMAT;
             }
             else {
                 $filename = "$this->folder/blog" . get_current_blog_id() . "-$bundle_name." . WPCFM_CONFIG_FORMAT;
@@ -220,8 +223,8 @@ return array();
     /**
      * Write the bundle to file
      */
-    function write_file( $bundle_name, $data ) {
-        $filename = $this->bundle_filename( $bundle_name );
+    function write_file( $bundle_name, $bundle_global, $data ) {
+        $filename = $this->bundle_filename( $bundle_name, $bundle_global );
         if ( file_exists( $filename ) ) {
             if ( is_writable( $filename ) ) {
                 return file_put_contents( $filename, $data );
