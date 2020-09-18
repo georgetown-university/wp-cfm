@@ -102,9 +102,9 @@
     display: inline;
 }
 
-.show-all,
-.hide-registered {
-    margin-left: 16px;
+.bundle-network-label {
+    display: block;
+    margin-top: 20px;
 }
 
 /* MultiSelect */

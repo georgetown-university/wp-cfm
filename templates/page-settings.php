@@ -99,14 +99,16 @@ $configuration = $this->helper->group_items( $configuration );
             <div class="bundle-row-inner">
                 <input type="text" class="bundle-label" value="New bundle"/>
                 <input type="text" class="bundle-name" value="new_bundle"/>
-
-                <?php if ( is_multisite() ) { ?>
-                    <input type="checkbox" class="bundle-network">
-                    Bundle applies to entire network?
-                <?php } ?>
-
                 <a href="#" class="hide-registered">Hide registered</a>
                 <a href="#" class="show-all hidden">Show all</a>
+
+                <?php if ( is_multisite() ) { ?>
+                    <label class="bundle-network-label">
+                        <input type="checkbox" class="bundle-network">
+                        Bundle applies to entire network?
+                    </label>
+                <?php } ?>
+
                 <div class="bundle-select-wrapper">
                     <select class="bundle-select" multiple="multiple">
                         <?php foreach ( $configuration as $group => $config ) : ?>
