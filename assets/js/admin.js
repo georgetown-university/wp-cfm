@@ -10,6 +10,7 @@
                 var $this = $('.bundles-hidden .bundle-row').clone();
                 $this.find('.bundle-label').val(obj.label);
                 $this.find('.bundle-name').val(obj.name);
+                $this.find('.bundle-network').prop('checked', obj.network);
                 $this.find('.bundle-select').val(obj.config);
                 $this.find('.bundle-toggle').html(obj.label);
                 $this.attr('data-bundle', obj.name);
@@ -47,6 +48,7 @@
                 var obj = {
                     'label': $this.find('.bundle-label').val(),
                     'name': $this.find('.bundle-name').val(),
+                    'network': $this.find('.bundle-network').prop('checked'),
                     'config': $this.find('.bundle-select').val()
                 };
 

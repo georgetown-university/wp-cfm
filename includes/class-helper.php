@@ -86,10 +86,11 @@ class WPCFM_Helper
                         continue;
                     }
                 }
-                elseif ( $filename_parts[0] != 'blog' . get_current_blog_id() ) {
+                
+                // only accept blogX where X is zero or the current blog ID
+                elseif ( $filename_parts[0] != 'blog0' && $filename_parts[0] != 'blog' . get_current_blog_id() ) {
                     continue;
                 }
-
             }
 
             $bundle_data = WPCFM()->readwrite->read_file( $bundle_name );
@@ -102,6 +103,7 @@ class WPCFM_Helper
                 'config'    => $bundle_data,
             );
         }
+        
         return $output;
     }
 

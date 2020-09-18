@@ -102,6 +102,11 @@
     display: inline;
 }
 
+.show-all,
+.hide-registered {
+    margin-left: 16px;
+}
+
 /* MultiSelect */
 
 .multiselect {

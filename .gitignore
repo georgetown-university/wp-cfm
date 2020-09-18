@@ -1,2 +1,5 @@
 .svn/
 .DS_Store
+
+# PhpStorm project details
+.idea
