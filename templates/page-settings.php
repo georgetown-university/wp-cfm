@@ -33,6 +33,14 @@ $configuration = $this->helper->group_items( $configuration );
         ) ) ): ?>
         <div class="wpcfm-error">Your PHP version is not compatible with Yaml export format. Upgrade to at least PHP
             5.6.4.
+
+            <input type="hidden" id="is-network" value="<?php echo is_network_admin() ? 1: 0 ?>">
+
+<div class="wpcfm-bundles">
+    <div class="wpcfm-action-buttons">
+        <div style="float:right">
+            <span class="wpcfm-response"></span>
+            <a class="button-primary wpcfm-save"><?php _e( 'Save Changes', 'wpcfm' ); ?></a>
         </div>
     <?php endif; ?>
 
