@@ -10,6 +10,7 @@
                 var $this = $('.bundles-hidden .bundle-row').clone();
                 $this.find('.bundle-label').val(obj.label);
                 $this.find('.bundle-name').val(obj.name);
+                $this.find('.bundle-global').prop('checked', obj.global);
                 $this.find('.bundle-select').val(obj.config);
                 $this.find('.bundle-toggle').html(obj.label);
                 $this.attr('data-bundle', obj.name);
@@ -47,6 +48,7 @@
                 var obj = {
                     'label': $this.find('.bundle-label').val(),
                     'name': $this.find('.bundle-name').val(),
+                    'global': $this.find('.bundle-global').prop('checked'),
                     'config': $this.find('.bundle-select').val()
                 };
 
@@ -112,12 +114,19 @@
         // "Push" button
         $(document).on('click', '.push-bundle:not(.disabled)', function() {
             $('.wpcfm-response').html('Exporting to file...');
-            var bundle_name = $(this).closest('.bundle-row').attr('data-bundle');
+            var bundle_row = $(this).closest('.bundle-row');
+            var bundle_name = bundle_row.attr('data-bundle');
+
+            // using !! ensures a Boolean result when the .bundle-global check box isn't there
+            var bundle_global = !!bundle_row.find('.bundle-global').prop('checked');
 
             $.post(ajaxurl, {
                 'action': 'wpcfm_push',
                 'compare_env': compare_env,
-                'data': { 'bundle_name': bundle_name }
+                'data': {
+                    'bundle_name': bundle_name,
+                    'bundle_global': bundle_global
+                }
             }, function(response) {
                 $('.wpcfm-response').html(response);
             });

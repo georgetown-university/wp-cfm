@@ -1,8 +1,8 @@
 <?php
 
 use Symfony\Component\Yaml\Yaml;
-class WPCFM_Readwrite
-{
+
+class WPCFM_Readwrite {
 
     public $folder;
     public $error;
@@ -15,17 +15,17 @@ class WPCFM_Readwrite
 
         if ( ! is_dir( $this->folder ) ) {
             if ( ! wp_mkdir_p( $this->folder ) ) {
-                $this->error = __( 'Create ' . $this->folder .  ' and grant write access', 'wpcfm' );
+                $this->error = __( 'Create ' . $this->folder . ' and grant write access', 'wpcfm' );
             }
-        }
-        elseif ( ! is_writable( $this->folder ) ) {
-            $this->error = __( 'The ' . $this->folder .  ' folder is not writable', 'wpcfm' );
+        } elseif ( ! is_writable( $this->folder ) ) {
+            $this->error = __( 'The ' . $this->folder . ' folder is not writable', 'wpcfm' );
         }
     }
 
 
     /**
      * Move the file bundle to DB
+     *
      * @param string $bundle_name The bundle name (or "all")
      */
     function pull_bundle( $bundle_name ) {
@@ -43,71 +43,71 @@ class WPCFM_Readwrite
         $dontUpdateSettings = false;
         // Import each bundle into DB
         foreach ( $bundles as $bundle_name ) {
-            $data = $this->read_file( $bundle_name );
+            $data         = $this->read_file( $bundle_name );
             $bundle_label = $data['.label'];
             unset( $data['.label'] );
 
             $this->write_db( $bundle_name, $data );
 
             // If we import wpcfm settings don't update it
-            if (!$dontUpdateSettings) {
-              $dontUpdateSettings = $bundle_name == 'wpcfm';
-          }
-          if ($dontUpdateSettings) {
-              continue;
-          }
+            if ( ! $dontUpdateSettings ) {
+                $dontUpdateSettings = $bundle_name == 'wpcfm';
+            }
+            if ( $dontUpdateSettings ) {
+                continue;
+            }
 
             // Update the bundle's config options (using the pull file)
-          $exists = false;
-          foreach ( $settings['bundles'] as $key => $bundle_settings ) {
-            if ( $bundle_name == $bundle_settings['name'] ) {
-                $settings['bundles'][ $key ]['label'] = $bundle_label;
-                $settings['bundles'][ $key ]['config'] = array_keys( $data );
-                $exists = true;
-                break;
+            $exists = false;
+            foreach ( $settings['bundles'] as $key => $bundle_settings ) {
+                if ( $bundle_name == $bundle_settings['name'] ) {
+                    $settings['bundles'][ $key ]['label']  = $bundle_label;
+                    $settings['bundles'][ $key ]['config'] = array_keys( $data );
+                    $exists                                = true;
+                    break;
+                }
+            }
+
+            if ( ! $exists ) {
+                $settings['bundles'][] = array(
+                    'label'  => $bundle_label,
+                    'name'   => $bundle_name,
+                    'config' => array_keys( $data ),
+                );
             }
         }
 
-        if ( ! $exists ) {
-            $settings['bundles'][] = array(
-                'label'     => $bundle_label,
-                'name'      => $bundle_name,
-                'config'    => array_keys( $data ),
-            );
+        // Write the settings
+        if ( ! $dontUpdateSettings ) {
+            WPCFM()->options->update( 'wpcfm_settings', json_encode( $settings ) );
         }
     }
-
-        // Write the settings
-    if (!$dontUpdateSettings) {
-      WPCFM()->options->update( 'wpcfm_settings', json_encode( $settings ) );
-  }
-}
 
 
     /**
      * Move the DB bundle to file
+     *
      * @param string $bundle_name The bundle name (or "all")
      */
-    function push_bundle( $bundle_name ) {
+    function push_bundle( $bundle_name, $bundle_global = false ) {
         $bundles = ( 'all' == $bundle_name ) ? WPCFM()->helper->get_bundle_names() : array( $bundle_name );
 
         foreach ( $bundles as $bundle_name ) {
             $data = $this->read_db( $bundle_name );
 
             // Append the bundle label
-            $bundle_meta = WPCFM()->helper->get_bundle_by_name( $bundle_name );
+            $bundle_meta    = WPCFM()->helper->get_bundle_by_name( $bundle_name );
             $data['.label'] = $bundle_meta['label'];
 
-            if (WPCFM_CONFIG_FORMAT == 'json') {
-            // JSON_PRETTY_PRINT for PHP 5.4+
+            if ( WPCFM_CONFIG_FORMAT == 'json' ) {
+                // JSON_PRETTY_PRINT for PHP 5.4+
                 $data = version_compare( PHP_VERSION, '5.4.0', '>=' ) ?
-                json_encode( $data, JSON_PRETTY_PRINT ) :
-                json_encode( $data );
+                    json_encode( $data, JSON_PRETTY_PRINT ) :
+                    json_encode( $data );
+            } elseif ( in_array( WPCFM_CONFIG_FORMAT, array( 'yaml', 'yml' ) ) ) {
+                $data = WPCFM_Helper::convert_to_yaml( $data );
             }
-            elseif (in_array(WPCFM_CONFIG_FORMAT, array('yaml', 'yml'))) {
-                $data = WPCFM_Helper::convert_to_yaml($data);
-            }
-            $this->write_file( $bundle_name, $data );
+            $this->write_file( $bundle_name, $bundle_global, $data );
         }
     }
 
@@ -117,8 +117,8 @@ class WPCFM_Readwrite
      */
     function compare_bundle( $bundle_name ) {
 
-        $return = array();
-        $db_bundle = array();
+        $return      = array();
+        $db_bundle   = array();
         $file_bundle = array();
 
         // Diff all bundles
@@ -128,35 +128,33 @@ class WPCFM_Readwrite
 
                 // Retrieve each bundle
                 $temp_file = $this->read_file( $bundle_name );
-                $temp_db = $this->read_db( $bundle_name );
+                $temp_db   = $this->read_db( $bundle_name );
 
                 // Merge the bundle values
                 $file_bundle = array_merge( $file_bundle, $temp_file );
-                $db_bundle = array_merge( $db_bundle, $temp_db );
+                $db_bundle   = array_merge( $db_bundle, $temp_db );
             }
-        }
-        // Diff a single bundle
+        } // Diff a single bundle
         else {
             $file_bundle = $this->read_file( $bundle_name );
-            $db_bundle = $this->read_db( $bundle_name );
+            $db_bundle   = $this->read_db( $bundle_name );
         }
 
         // Remove the .label
         unset( $file_bundle['.label'] );
 
         // Convert to YAML for better readability if PHP version is compatible
-        if (PHP_VERSION_ID >= 50604 && WPCFM_CONFIG_USE_YAML_DIFF) {
-            $file_bundle = WPCFM_Helper::convert_to_yaml($file_bundle, false);
-            $db_bundle   = WPCFM_Helper::convert_to_yaml($db_bundle, false);
+        if ( PHP_VERSION_ID >= 50604 && WPCFM_CONFIG_USE_YAML_DIFF ) {
+            $file_bundle = WPCFM_Helper::convert_to_yaml( $file_bundle, false );
+            $db_bundle   = WPCFM_Helper::convert_to_yaml( $db_bundle, false );
         }
 
         if ( $file_bundle == $db_bundle ) {
             $return['error'] = __( 'Both versions are identical', 'wpcfm' );
-        }
-        else {
+        } else {
             $return['error'] = '';
-            $return['file'] = $file_bundle;
-            $return['db'] = $db_bundle;
+            $return['file']  = $file_bundle;
+            $return['db']    = $db_bundle;
         }
 
         return $return;
@@ -167,14 +165,15 @@ class WPCFM_Readwrite
      * Returns the bundle filename.
      * @return string
      */
-    function bundle_filename( $bundle_name ) {
+    function bundle_filename( $bundle_name, $bundle_global = false ) {
         $filename = "$this->folder/$bundle_name." . WPCFM_CONFIG_FORMAT;
 
         if ( is_multisite() ) {
             if ( WPCFM()->options->is_network ) {
                 $filename = "$this->folder/network-$bundle_name." . WPCFM_CONFIG_FORMAT;
-            }
-            else {
+            } elseif ( $bundle_global ) {
+                $filename = "$this->folder/global-$bundle_name." . WPCFM_CONFIG_FORMAT;
+            } else {
                 $filename = "$this->folder/blog" . get_current_blog_id() . "-$bundle_name." . WPCFM_CONFIG_FORMAT;
             }
         }
@@ -191,45 +190,46 @@ class WPCFM_Readwrite
         $filename = $this->bundle_filename( $bundle_name );
         if ( is_readable( $filename ) ) {
             $contents = file_get_contents( $filename );
-            if (WPCFM_CONFIG_FORMAT == 'json') {
+            if ( WPCFM_CONFIG_FORMAT == 'json' ) {
                 return json_decode( $contents, true );
-            }
-            elseif (in_array(WPCFM_CONFIG_FORMAT, array('yaml', 'yml'))) {
-              $array = Yaml::parse($contents);
-              foreach ($array as $key => $value) {
-                $format = array();
-                if (preg_match('/\.(.*)_format/i', $key, $format)) {
-                  switch ($array[$format[0]]) {
-                    case 'serialized':
-                    $array[$format[1]] = serialize($array[$format[1]]);
-                    break;
-                    case 'json':
-                    $array[$format[1]] = json_encode($array[$format[1]]);
-                    break;
+            } elseif ( in_array( WPCFM_CONFIG_FORMAT, array( 'yaml', 'yml' ) ) ) {
+                $array = Yaml::parse( $contents );
+                foreach ( $array as $key => $value ) {
+                    $format = array();
+                    if ( preg_match( '/\.(.*)_format/i', $key, $format ) ) {
+                        switch ( $array[ $format[0] ] ) {
+                            case 'serialized':
+                                $array[ $format[1] ] = serialize( $array[ $format[1] ] );
+                                break;
+                            case 'json':
+                                $array[ $format[1] ] = json_encode( $array[ $format[1] ] );
+                                break;
+                        }
+                        unset( $array[ $format[0] ] );
+                    }
                 }
-                unset($array[$format[0]]);
+
+                return $array;
             }
         }
-        return $array;
+
+        return array();
     }
-}
-return array();
-}
 
 
     /**
      * Write the bundle to file
      */
-    function write_file( $bundle_name, $data ) {
-        $filename = $this->bundle_filename( $bundle_name );
+    function write_file( $bundle_name, $bundle_global, $data ) {
+        $filename = $this->bundle_filename( $bundle_name, $bundle_global );
         if ( file_exists( $filename ) ) {
             if ( is_writable( $filename ) ) {
                 return file_put_contents( $filename, $data );
             }
-        }
-        elseif ( is_writable( $this->folder ) ) {
+        } elseif ( is_writable( $this->folder ) ) {
             return file_put_contents( $filename, $data );
         }
+
         return false;
     }
 
@@ -242,6 +242,7 @@ return array();
         if ( is_writable( $filename ) ) {
             return unlink( $filename );
         }
+
         return false;
     }
 
@@ -252,7 +253,7 @@ return array();
      */
     function read_db( $bundle_name ) {
 
-        $output = array();
+        $output     = array();
         $all_config = WPCFM()->registry->get_configuration_items();
 
         $opts = WPCFM()->options->get( 'wpcfm_settings' );
@@ -278,6 +279,7 @@ return array();
 
     /**
      * Save the bundle configuration data (to database)
+     *
      * @param string $bundle_name
      * @param array $file_data Array of configuration items
      */
@@ -298,10 +300,10 @@ return array();
 
             // Create the callback params
             $callback_params = array(
-                'name'          => $key,
-                'group'         => $group,
-                'old_value'     => $db_data[ $key ]['value'],
-                'new_value'     => $val,
+                'name'      => $key,
+                'group'     => $group,
+                'old_value' => $db_data[ $key ]['value'],
+                'new_value' => $val,
             );
 
             // If no callback is defined, default to the "callback_wp_options" method
@@ -316,9 +318,8 @@ return array();
             if ( is_callable( $callback ) ) {
                 if ( is_array( $callback ) ) {
                     $function = $callback[1];
-                    $success = $callback[0]->$function( $callback_params );
-                }
-                else {
+                    $success  = $callback[0]->$function( $callback_params );
+                } else {
                     $success = $callback( $callback_params );
                 }
             }
@@ -332,7 +333,7 @@ return array();
      * Default callback - write to wp_options table
      */
     function callback_wp_options( $params ) {
-        $option_name = $params['name'];
+        $option_name  = $params['name'];
         $option_value = maybe_unserialize( $params['new_value'] );
         WPCFM()->options->update( $option_name, $option_value );
     }
