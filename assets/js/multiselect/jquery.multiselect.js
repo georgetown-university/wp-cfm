@@ -17,7 +17,7 @@ by Matt Gibbs
             $(optgroup).find('option').each(function(idx, option) {
                 var val = $(option).val();
                 var checked = $(option).is(':checked') ? ' checked="checked"' : '';
-                html += '<div class="opt"><input type="checkbox" value="' + val + '"' + checked + ' /> ' + $(option).html() + '</div>';
+                html += '<div class="opt"><label><input type="checkbox" value="' + val + '"' + checked + ' /> ' + $(option).html() + '</label></div>';
             });
 
             html += '</div>';
