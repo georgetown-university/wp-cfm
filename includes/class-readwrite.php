@@ -175,7 +175,7 @@ class WPCFM_Readwrite
                 $filename = "$this->folder/network-$bundle_name." . WPCFM_CONFIG_FORMAT;
             }
             elseif ( $bundle_global ) {
-                $filename = "$this->folder/global-blog-$bundle_name." . WPCFM_CONFIG_FORMAT;
+                $filename = "$this->folder/global-$bundle_name." . WPCFM_CONFIG_FORMAT;
             }
             else {
                 $filename = "$this->folder/blog" . get_current_blog_id() . "-$bundle_name." . WPCFM_CONFIG_FORMAT;
