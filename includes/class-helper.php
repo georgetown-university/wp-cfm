@@ -1,8 +1,8 @@
 <?php
 
 use Symfony\Component\Yaml\Yaml;
-class WPCFM_Helper
-{
+
+class WPCFM_Helper {
 
     /**
      * Load all bundles (DB + file)
@@ -16,8 +16,8 @@ class WPCFM_Helper
 
         if ( isset( $opts['bundles'] ) ) {
             foreach ( $opts['bundles'] as $bundle ) {
-                $bundle['is_db'] = true;
-                $bundle['is_file'] = false;
+                $bundle['is_db']           = true;
+                $bundle['is_file']         = false;
                 $output[ $bundle['name'] ] = $bundle;
             }
         }
@@ -25,17 +25,16 @@ class WPCFM_Helper
         // Then merge file bundles
         $file_bundles = $this->get_file_bundles();
         foreach ( $file_bundles as $bundle_name => $bundle ) {
-            if ( isset( $output[ $bundle_name ] ) ) {
-                $output[ $bundle_name ]['is_file'] = true;
-                $output[ $bundle_name ]['url'] = $this->get_bundle_url( $bundle_name );
-            }
-            else {
-                $bundle['is_db'] = false;
-                $bundle['is_file'] = true;
-                $bundle['url'] = $this->get_bundle_url( $bundle_name );
-                $bundle['config'] = array_keys($bundle['config']);
+            if ( ! isset( $output[ $bundle_name ] ) ) {
                 $output[ $bundle_name ] = $bundle;
             }
+
+            $is_global = isset($bundle['global']) && $bundle['global'];
+
+            $output[ $bundle_name ]['is_file'] = true;
+            $output[ $bundle_name ]['url']     = $this->get_bundle_url( $bundle_name, $is_global );
+            $output[ $bundle_name ]['config']  = array_keys( $bundle['config'] );
+            $output[ $bundle_name ]['label']   = $bundle['label'];
         }
 
         return $output;
@@ -46,8 +45,8 @@ class WPCFM_Helper
      * Get bundle URL
      */
 
-    function get_bundle_url( $bundle_name ) {
-        return WPCFM_CONFIG_URL . '/' . basename( WPCFM()->readwrite->bundle_filename( $bundle_name ) );
+    function get_bundle_url( $bundle_name, $bundle_global = false ) {
+        return WPCFM_CONFIG_URL . '/' . basename( WPCFM()->readwrite->bundle_filename( $bundle_name, $bundle_global ) );
     }
 
 
@@ -56,10 +55,10 @@ class WPCFM_Helper
      */
     function get_file_bundles() {
 
-        $output = array();
-        $filenames = array_filter( scandir( WPCFM_CONFIG_DIR ), function( $item ) {
-            return !is_dir( WPCFM_CONFIG_DIR . '/' . $item );
-        });
+        $output    = array();
+        $filenames = array_filter( scandir( WPCFM_CONFIG_DIR ), function ( $item ) {
+            return ! is_dir( WPCFM_CONFIG_DIR . '/' . $item );
+        } );
 
         foreach ( $filenames as $filename ) {
 
@@ -68,11 +67,14 @@ class WPCFM_Helper
                 continue;
             }
 
-            // Default to single site bundle
-            $bundle_name = str_replace( '.' . WPCFM_CONFIG_FORMAT, '', $filename );
+            // Default to single site bundle and assume non-global
+            $bundle_name   = str_replace( '.' . WPCFM_CONFIG_FORMAT, '', $filename );
+            $bundle_global = false;
 
             if ( is_multisite() ) {
                 $filename_parts = explode( '-', $filename, 2 );
+                $bundle_global  = $filename_parts[0] === 'global';
+
 
                 // Only accept multi-site bundles
                 if ( 2 > count( $filename_parts ) ) {
@@ -81,27 +83,26 @@ class WPCFM_Helper
 
                 $bundle_name = str_replace( '.json', '', $filename_parts[1] );
 
-                if ( WPCFM()->options->is_network ) {
-                    if ( 'network' != $filename_parts[0] ) {
-                        continue;
-                    }
-                }
-                elseif ( $filename_parts[0] != 'blog' . get_current_blog_id() ) {
+                if ( WPCFM()->options->is_network && 'network' != $filename_parts[0] ) {
+                    continue;
+                } elseif ( ! $bundle_global && $filename_parts[0] != 'blog' . get_current_blog_id() ) {
                     continue;
                 }
 
             }
 
-            $bundle_data = WPCFM()->readwrite->read_file( $bundle_name );
+            $bundle_data  = WPCFM()->readwrite->read_file( $bundle_name, $bundle_global );
             $bundle_label = $bundle_data['.label'];
             unset( $bundle_data['.label'] );
 
             $output[ $bundle_name ] = array(
-                'label'     => $bundle_label,
-                'name'      => $bundle_name,
-                'config'    => $bundle_data,
+                'label'  => $bundle_label,
+                'name'   => $bundle_name,
+                'config' => $bundle_data,
+                'global' => (int) $bundle_global
             );
         }
+
         return $output;
     }
 
@@ -119,9 +120,10 @@ class WPCFM_Helper
      */
     function get_bundle_by_name( $bundle_name ) {
         $bundles = $this->get_bundles();
+
         return isset( $bundles[ $bundle_name ] ) ?
-        $bundles[ $bundle_name ] :
-        array();
+            $bundles[ $bundle_name ] :
+            array();
     }
 
 
@@ -135,7 +137,7 @@ class WPCFM_Helper
         ksort( $items );
 
         foreach ( $items as $key => $item ) {
-            $group = isset( $item['group'] ) ? $item['group'] : __( 'WP Options', 'wpcfm' );
+            $group                    = isset( $item['group'] ) ? $item['group'] : __( 'WP Options', 'wpcfm' );
             $output[ $group ][ $key ] = $item;
         }
 
@@ -150,23 +152,23 @@ class WPCFM_Helper
      *
      * @return mixed
      */
-    static function convert_to_yaml($data, $saveFormat = true) {
-        foreach ($data as $key => &$value) {
-            $jsonDecoded = json_decode($value, true);
-            if (is_array($jsonDecoded)) {
+    static function convert_to_yaml( $data, $saveFormat = true ) {
+        foreach ( $data as $key => &$value ) {
+            $jsonDecoded = json_decode( $value, true );
+            if ( is_array( $jsonDecoded ) ) {
                 $value = $jsonDecoded;
-                if ($saveFormat) {
-                    $data['.' . $key . '_format'] = 'json';
+                if ( $saveFormat ) {
+                    $data[ '.' . $key . '_format' ] = 'json';
                 }
-            }
-            elseif (is_serialized($value)) {
-                $value = unserialize($value);
-                if ($saveFormat) {
-                    $data['.' . $key . '_format'] = 'serialized';
+            } elseif ( is_serialized( $value ) ) {
+                $value = unserialize( $value );
+                if ( $saveFormat ) {
+                    $data[ '.' . $key . '_format' ] = 'serialized';
                 }
             }
         }
-        return Yaml::dump($data, 10);
+
+        return Yaml::dump( $data, 10 );
     }
 
 }

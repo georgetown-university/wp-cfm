@@ -67,6 +67,11 @@
     padding: 10px;
 }
 
+.bundle-row .bundle-global-label {
+    display: block;
+    margin-top: 20px;
+}
+
 .bundle-row.active .bundle-header {
     color: #fff;
     background-color: #21759B;

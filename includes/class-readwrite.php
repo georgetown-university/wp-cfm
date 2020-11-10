@@ -28,7 +28,7 @@ class WPCFM_Readwrite {
      *
      * @param string $bundle_name The bundle name (or "all")
      */
-    function pull_bundle( $bundle_name ) {
+    function pull_bundle( $bundle_name, $bundle_global = false ) {
         $bundles = ( 'all' == $bundle_name ) ? WPCFM()->helper->get_bundle_names() : array( $bundle_name );
 
         // Retrieve the settings
@@ -43,7 +43,7 @@ class WPCFM_Readwrite {
         $dontUpdateSettings = false;
         // Import each bundle into DB
         foreach ( $bundles as $bundle_name ) {
-            $data         = $this->read_file( $bundle_name );
+            $data         = $this->read_file( $bundle_name, $bundle_global );
             $bundle_label = $data['.label'];
             unset( $data['.label'] );
 
@@ -115,7 +115,7 @@ class WPCFM_Readwrite {
     /**
      * Compare the DB vs file versions
      */
-    function compare_bundle( $bundle_name ) {
+    function compare_bundle( $bundle_name, $bundle_global = false ) {
 
         $return      = array();
         $db_bundle   = array();
@@ -127,7 +127,7 @@ class WPCFM_Readwrite {
             foreach ( $bundle_names as $bundle_name ) {
 
                 // Retrieve each bundle
-                $temp_file = $this->read_file( $bundle_name );
+                $temp_file = $this->read_file( $bundle_name, $bundle_global );
                 $temp_db   = $this->read_db( $bundle_name );
 
                 // Merge the bundle values
@@ -186,8 +186,8 @@ class WPCFM_Readwrite {
      * Load the file bundle
      * @return array
      */
-    function read_file( $bundle_name ) {
-        $filename = $this->bundle_filename( $bundle_name );
+    function read_file( $bundle_name, $bundle_global ) {
+        $filename = $this->bundle_filename( $bundle_name, $bundle_global );
         if ( is_readable( $filename ) ) {
             $contents = file_get_contents( $filename );
             if ( WPCFM_CONFIG_FORMAT == 'json' ) {
@@ -237,8 +237,8 @@ class WPCFM_Readwrite {
     /**
      * Delete a bundle file
      */
-    function delete_file( $bundle_name ) {
-        $filename = $this->bundle_filename( $bundle_name );
+    function delete_file( $bundle_name, $bundle_global = false ) {
+        $filename = $this->bundle_filename( $bundle_name, $bundle_global );
         if ( is_writable( $filename ) ) {
             return unlink( $filename );
         }

@@ -2,7 +2,7 @@
     $(function() {
 
         // Load
-        $.post(ajaxurl, {
+        $.get(ajaxurl, {
             action: 'wpcfm_load',
             compare_env: compare_env
         }, function(response) {
@@ -12,7 +12,7 @@
                 $this.find('.bundle-name').val(obj.name);
                 $this.find('.bundle-global').prop('checked', obj.global);
                 $this.find('.bundle-select').val(obj.config);
-                $this.find('.bundle-toggle').html(obj.label);
+                $this.find('.bundle-toggle').html(obj.label + (obj.global ? ' (global)' : ''));
                 $this.attr('data-bundle', obj.name);
 
                 if (obj.is_file) {
@@ -55,7 +55,7 @@
                 data.bundles.push(obj);
             });
 
-            $.post(ajaxurl, {
+            $.get(ajaxurl, {
                 'action': 'wpcfm_save',
                 'compare_env': compare_env,
                 'data': JSON.stringify(data)
@@ -114,19 +114,11 @@
         // "Push" button
         $(document).on('click', '.push-bundle:not(.disabled)', function() {
             $('.wpcfm-response').html('Exporting to file...');
-            var bundle_row = $(this).closest('.bundle-row');
-            var bundle_name = bundle_row.attr('data-bundle');
 
-            // using !! ensures a Boolean result when the .bundle-global check box isn't there
-            var bundle_global = !!bundle_row.find('.bundle-global').prop('checked');
-
-            $.post(ajaxurl, {
+            $.get(ajaxurl, {
                 'action': 'wpcfm_push',
                 'compare_env': compare_env,
-                'data': {
-                    'bundle_name': bundle_name,
-                    'bundle_global': bundle_global
-                }
+                'data': get_push_pull_diff_data($(this))
             }, function(response) {
                 $('.wpcfm-response').html(response);
             });
@@ -137,12 +129,11 @@
         $(document).on('click', '.pull-bundle:not(.disabled)', function() {
             if (confirm('Import file settings to DB?')) {
                 $('.wpcfm-response').html('Importing into DB...');
-                var bundle_name = $(this).closest('.bundle-row').attr('data-bundle');
 
-                $.post(ajaxurl, {
+                $.get(ajaxurl, {
                     'action': 'wpcfm_pull',
                     'compare_env': compare_env,
-                    'data': { 'bundle_name': bundle_name }
+                    'data': get_push_pull_diff_data($(this))
                 }, function(response) {
                     $('.wpcfm-response').html(response);
                 });
@@ -152,11 +143,10 @@
 
         // "Diff" button
         $(document).on('click', '.diff-bundle:not(.disabled)', function() {
-            var bundle_name = $(this).closest('.bundle-row').attr('data-bundle');
-            $.post(ajaxurl, {
+            $.get(ajaxurl, {
                 'action': 'wpcfm_diff',
                 'compare_env': compare_env,
-                'data': { 'bundle_name': bundle_name }
+                'data': get_push_pull_diff_data($(this))
             }, function(response) {
                 if ('' != response.error) {
                     $('.wpcfm-diff .diff').html(response.error);
@@ -199,4 +189,13 @@
 
 
     });
+
+    function get_push_pull_diff_data(bundle) {
+        var bundle_row = bundle.closest('.bundle-row');
+
+        return {
+            'bundle_name': bundle_row.attr('data-bundle'),
+            'bundle_global': !!bundle_row.find('.bundle-global').prop('checked')
+        }
+    }
 })(jQuery);
